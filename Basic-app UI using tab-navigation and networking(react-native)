@@ -1,0 +1,148 @@
+import React from 'react';
+import { StyleSheet,Text, View ,Button,TextInput,FlatList,ActivityIndicator} from 'react-native';
+import { createBottomTabNavigator, createAppContainer,createStackNavigator  } from 'react-navigation';
+
+
+class ToReadScreen extends React.Component {
+  render() {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center',}}>
+      <Button
+          title="search"
+          onPress={() => this.props.navigation.navigate('Search')}
+        />
+        <Text>Hey there!
+        Search for books on flowers!</Text>
+      </View>
+    );
+  }
+}
+
+class ReadingScreen extends React.Component {
+  
+  render() {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Reading!</Text>
+    
+      </View>
+    );
+  }
+}
+
+class DoneScreen extends React.Component{
+  render(){
+    return(
+      <View style={{ flex:1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>wohoo..!!..you've completed reading a book!</Text>
+      </View>
+    )
+  }
+}
+
+class SearchScreen extends React.Component {
+  constructor(props){
+    super(props);
+    this.state={text: ''};
+  }
+
+
+  render() {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>search!</Text>
+        <TextInput 
+
+       style={styles.input}
+       placeholder="type something"
+       onChangeText={(text)=>this.setState({text})}
+     
+       />
+       <Button title="search"
+        onPress={() => this.props.navigation.navigate('Result',     {search_text: this.state.text})}
+       />
+      </View>
+    );
+  }
+}
+
+class ResultsScreen extends React.Component {
+
+  constructor(props){
+    super(props);
+    this.state={isLoading:true, search_text:this.props.navigation.getParam("search_text","")}
+  }
+
+componentDidMount(){
+    return fetch('https://www.googleapis.com/books/v1/volumes?q=flowers')
+      .then((response) => response.json())
+      .then((responseJson) => {
+
+        this.setState({
+          isLoading: false,
+          dataSource: responseJson.items,
+        }, function(){
+
+        });
+
+      })
+      .catch((error) =>{
+        console.error(error);
+      });
+  }
+  
+  render() {
+      if(this.state.isLoading){
+      return(
+        <View style={{flex: 1, padding: 20}}>
+          <ActivityIndicator/>
+        </View>
+      )
+    }
+
+    const search_text=this.props.navigation.getParam("search_text","");
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Results</Text>
+        <Text>{search_text}</Text>
+        <FlatList
+          data={this.state.dataSource}
+          renderItem={({item}) => <Text>{item.volumeInfo.title}</Text>}
+          keyExtractor={({id}, index) => id}
+        />
+      </View>
+    );
+  }
+}
+
+
+const ToReadStack=createStackNavigator({
+  ToRead:{screen : ToReadScreen},
+  Result:{screen:ResultsScreen},
+  Search :{screen : SearchScreen},
+  
+});
+const ReadingStack=createStackNavigator({
+  Reading:{screen : ReadingScreen},
+});
+const DoneStack=createStackNavigator({
+  Done:{screen : DoneScreen},
+});
+
+const TabNavigator = createBottomTabNavigator({
+  ToRead: { screen: ToReadStack },
+  Reading: { screen: ReadingStack },
+  Done:{ screen: DoneStack },
+});
+
+const styles=StyleSheet.create({
+input:{
+    height: 40,
+    backgroundColor: '#ffffff',
+    color: '#000000',
+    paddingHorizontal: 10,
+    marginBottom:20
+  },
+})
+
+export default createAppContainer(TabNavigator);
